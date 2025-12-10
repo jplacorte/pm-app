@@ -1,17 +1,14 @@
 <script setup lang="ts">
 import { faArrowCircleLeft } from '@fortawesome/free-solid-svg-icons';
 import { TextInput, TextButton, IconButton } from '@pm-web/ui';
+import TonberryIcon from '../Images/tonberry_christmas.png';
 </script>
-
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Pacifico&display=swap');
-</style>
 
 <template>
   <div class="flex flex-col items-center justify-center w-full h-full">
 
     <div class="flex flex-col w-96 items-center">
-      <img src="../../Images/tonberry_christmas.png" alt="Tonberry Cafe Logo" class="w-32 h-32 "/>
+      <img :src="TonberryIcon" alt="Tonberry Cafe Logo" class="w-32 h-32"/>
 
       <h2 class="text-8xl mb-24 text-[#FFE8DB] text-center font-['Pacifico',cursive]">Register</h2>
 

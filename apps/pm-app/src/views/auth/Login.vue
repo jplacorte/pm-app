@@ -7,10 +7,6 @@ const handleClick = () => {
 };
 </script>
 
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Pacifico&display=swap');
-</style>
-
 <template>
   <div class="w-full h-full flex flex-col justify-center items-center text-white">
 

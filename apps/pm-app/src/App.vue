@@ -14,8 +14,13 @@ const showNavbar = computed(() => {
 </script>
 
 <template>
-  <div class="h-screen w-screen text-white">
-    <Navbar v-if="showNavbar"/>
-    <RouterView />
+  <div class="h-screen w-full text-white flex flex-col overflow-hidden">
+
+    <Navbar v-if="showNavbar" class="flex-none" />
+
+    <div class="flex-1 overflow-auto relative">
+      <RouterView />
+    </div>
+
   </div>
 </template>
