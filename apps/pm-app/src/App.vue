@@ -6,9 +6,11 @@ import Navbar from './components/Navbar.vue';
 const route = useRoute();
 
 const showNavbar = computed(() => {
-  return route.path !== '/auth/login';
-});
 
+  const hiddenRoutes = ['/auth/login', '/auth/register'];
+
+  return !hiddenRoutes.includes(route.path);
+});
 </script>
 
 <template>

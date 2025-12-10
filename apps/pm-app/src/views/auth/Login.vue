@@ -14,13 +14,13 @@ const handleClick = () => {
 <template>
   <div class="w-full h-full flex flex-col justify-center items-center text-white">
 
-    <img src="../../Images/tonberry_christmas.png" alt="Tonberry Cafe Logo" class="w-32 h-32 mb-8"/>
+    <img src="../../Images/tonberry_christmas.png" alt="Tonberry Cafe Logo" class="w-32 h-32 "/>
 
     <h1 class="text-8xl mb-24 text-[#FFE8DB] font-['Pacifico',cursive]">
       Tonberry Cafe
     </h1>
 
-    <div class="flex flex-col w-96 space-y-6 bg-[#FFE8DB] p-4 rounded-lg items-center text-center">
+    <div class="flex flex-col w-96 space-y-6 bg-[#FFE8DB] p-8 rounded-lg items-center text-center">
       <TextInput
         placeholder="Enter your username"
       />
