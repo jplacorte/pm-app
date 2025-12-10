@@ -13,7 +13,6 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
-      // Add this alias for your UI package
       '@pm-web/ui': path.resolve(__dirname, '../../packages/ui/src')
     }
   }

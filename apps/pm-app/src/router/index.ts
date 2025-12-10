@@ -17,23 +17,23 @@ const routes: Array<RouteRecordRaw> = [
     name: 'login',
     component: () => import('../views/auth/Login.vue')
   },
-  // {
-  //   path: '/dashboard',
-  //   // Component is required for a parent route if it has a <router-view> inside
-  //   component: () => import('../views/dashboard/DashboardLayout.vue'),
-  //   children: [
-  //     {
-  //       path: '',
-  //       name: 'dashboard-overview',
-  //       component: () => import('../views/dashboard/Overview.vue')
-  //     },
-  //     {
-  //       path: 'settings',
-  //       name: 'dashboard-settings',
-  //       component: () => import('../views/dashboard/Settings.vue')
-  //     }
-  //   ]
-  // }
+  {
+    path: '/auth/register',
+    name: 'register',
+    component: () => import('../views/auth/Register.vue')
+  },
+  {
+    path: '/products',
+    // Component is required for a parent route if it has a <router-view> inside
+    component: () => import('../views/products/Products.vue'),
+    children: [
+      {
+        path: 'settings',
+        name: 'settings',
+        component: () => import('../views/products/Settings.vue')
+      }
+    ]
+  }
 ]
 
 const router = createRouter({

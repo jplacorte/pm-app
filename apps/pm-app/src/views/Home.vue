@@ -11,7 +11,7 @@ const navigateToLogin = () => {
 </script>
 
 <template>
-  <div class="w-full h-full flex flex-col justify-center items-center bg-gray-100 text-black">
+  <div class="w-full h-full flex flex-col justify-center items-center text-black">
     <h1>Home</h1>
     <RouterLink to="/dashboard">Go to Dashboard</RouterLink>
 

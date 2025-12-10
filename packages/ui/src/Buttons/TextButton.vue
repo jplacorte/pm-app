@@ -13,7 +13,7 @@ const emit = defineEmits<(e: "click", event: MouseEvent) => void>();
 </script>
 
 <template>
-  <button class="border-2 rounded-lg p-2 text-2xl font-medium cursor-pointer bg-white text-blue-950 text-center hover:bg-blue-700" v-bind="$attrs"
+  <button class="border-none rounded-lg p-2 text-xl font-medium cursor-pointer bg-[#739EC9] text-white text-center hover:bg-[#5682B1] w-full" v-bind="$attrs"
   @click="emit('click', $event)">
     {{ label }}
   </button>

@@ -1,11 +1,19 @@
 <script setup lang="ts">
-// In most Vue 3 apps, RouterView is globally registered,
-// but importing it is safe and makes it explicit for TypeScript.
-import { RouterView } from 'vue-router';
+import { computed } from 'vue';
+import { RouterView, useRoute } from 'vue-router';
+import Navbar from './components/Navbar.vue';
+
+const route = useRoute();
+
+const showNavbar = computed(() => {
+  return route.path !== '/auth/login';
+});
+
 </script>
 
 <template>
-  <div class="h-screen w-screen bg-slate-900 text-white">
+  <div class="h-screen w-screen text-white">
+    <Navbar v-if="showNavbar"/>
     <RouterView />
   </div>
 </template>
