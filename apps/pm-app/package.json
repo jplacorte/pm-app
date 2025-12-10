@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@fortawesome/free-solid-svg-icons": "^7.1.0",
     "@pm-web/types": "workspace:^",
     "@pm-web/ui": "workspace:^",
     "@tailwindcss/vite": "^4.1.17",
