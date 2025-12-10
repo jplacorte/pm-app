@@ -5,14 +5,14 @@ interface Props {
   onClick?: () => void
 }
 
-const props = defineProps<Props>()
+const { label, className, onClick } = defineProps<Props>()
 </script>
 
 <template>
   <button
-    :class="props.className"
-    @click="props.onClick"
+    :class="className"
+    @click="onClick"
   >
-    {{ props.label }}
+    {{ label }}
   </button>
 </template>
