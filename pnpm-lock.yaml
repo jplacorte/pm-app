@@ -135,6 +135,9 @@ importers:
       '@pm-web/types':
         specifier: workspace:^
         version: link:../../packages/types
+      '@pm-web/ui':
+        specifier: workspace:^
+        version: link:../../packages/ui
       '@tailwindcss/vite':
         specifier: ^4.1.17
         version: 4.1.17(vite@7.2.7(@types/node@24.10.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1))
@@ -212,6 +215,9 @@ importers:
       react-dom:
         specifier: ^19.2.0
         version: 19.2.0(react@19.2.0)
+      vue:
+        specifier: ^3.5.24
+        version: 3.5.25(typescript@5.9.2)
     devDependencies:
       '@repo/eslint-config':
         specifier: workspace:*
@@ -234,6 +240,9 @@ importers:
       typescript:
         specifier: 5.9.2
         version: 5.9.2
+      vue-tsc:
+        specifier: ^3.1.4
+        version: 3.1.8(typescript@5.9.2)
 
 packages:
 
@@ -5728,6 +5737,18 @@ snapshots:
       '@vue/compiler-dom': 3.5.25
       '@vue/shared': 3.5.25
 
+  '@vue/language-core@3.1.8(typescript@5.9.2)':
+    dependencies:
+      '@volar/language-core': 2.4.26
+      '@vue/compiler-dom': 3.5.25
+      '@vue/shared': 3.5.25
+      alien-signals: 3.1.1
+      muggle-string: 0.4.1
+      path-browserify: 1.0.1
+      picomatch: 4.0.3
+    optionalDependencies:
+      typescript: 5.9.2
+
   '@vue/language-core@3.1.8(typescript@5.9.3)':
     dependencies:
       '@volar/language-core': 2.4.26
@@ -5755,6 +5776,12 @@ snapshots:
       '@vue/runtime-core': 3.5.25
       '@vue/shared': 3.5.25
       csstype: 3.1.3
+
+  '@vue/server-renderer@3.5.25(vue@3.5.25(typescript@5.9.2))':
+    dependencies:
+      '@vue/compiler-ssr': 3.5.25
+      '@vue/shared': 3.5.25
+      vue: 3.5.25(typescript@5.9.2)
 
   '@vue/server-renderer@3.5.25(vue@3.5.25(typescript@5.9.3))':
     dependencies:
@@ -8724,11 +8751,27 @@ snapshots:
 
   vscode-uri@3.1.0: {}
 
+  vue-tsc@3.1.8(typescript@5.9.2):
+    dependencies:
+      '@volar/typescript': 2.4.26
+      '@vue/language-core': 3.1.8(typescript@5.9.2)
+      typescript: 5.9.2
+
   vue-tsc@3.1.8(typescript@5.9.3):
     dependencies:
       '@volar/typescript': 2.4.26
       '@vue/language-core': 3.1.8(typescript@5.9.3)
       typescript: 5.9.3
+
+  vue@3.5.25(typescript@5.9.2):
+    dependencies:
+      '@vue/compiler-dom': 3.5.25
+      '@vue/compiler-sfc': 3.5.25
+      '@vue/runtime-dom': 3.5.25
+      '@vue/server-renderer': 3.5.25(vue@3.5.25(typescript@5.9.2))
+      '@vue/shared': 3.5.25
+    optionalDependencies:
+      typescript: 5.9.2
 
   vue@3.5.25(typescript@5.9.3):
     dependencies:

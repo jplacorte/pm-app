@@ -1,8 +1,9 @@
 {
-  "extends": "@repo/typescript-config/react-library.json",
+  "extends": "@repo/typescript-config/vue-library.json",
   "compilerOptions": {
-    "outDir": "dist"
+    "outDir": "dist","jsx": "preserve",
+    "jsxImportSource": "vue",
   },
-  "include": ["src"],
+  "include": ["src/", "src/**/*.vue"],
   "exclude": ["node_modules", "dist"]
 }
