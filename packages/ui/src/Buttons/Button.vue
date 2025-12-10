@@ -8,7 +8,7 @@ const emit = defineEmits<(e: "click", event: MouseEvent) => void>();
 
 <template>
   <button
-    class="border-2 rounded-xl text-sm font-medium cursor-pointer transition-colors"
+    class="border-2 roundedl-lg text-sm font-medium cursor-pointer transition-colors"
     v-bind="$attrs"
     @click="emit('click', $event)"
   >
