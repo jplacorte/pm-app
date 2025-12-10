@@ -1,6 +1,12 @@
-export const Categories = ['Beverage', 'Cake', 'Dessert', 'Pastry', 'Meal'] as const;
+export const Categories = [
+  "Beverage",
+  "Cake",
+  "Dessert",
+  "Pastry",
+  "Meal",
+] as const;
 
-export type Category = typeof Categories[number];
+export type Category = (typeof Categories)[number];
 
 export interface Product {
   id: number;

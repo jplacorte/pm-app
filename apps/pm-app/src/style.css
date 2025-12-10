@@ -1,9 +1,8 @@
-@import url('https://fonts.googleapis.com/css2?family=Pacifico&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Pacifico&display=swap");
 @import "tailwindcss";
 
 @source "../../../packages/ui/src";
 
-
-body{
-  background-color: #739EC9;
+body {
+	background-color: #739ec9;
 }

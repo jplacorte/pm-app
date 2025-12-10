@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { ref, onMounted, nextTick } from 'vue';
-import { Categories } from '@pm-web/types';
+import { Categories } from "@pm-web/types";
+import { nextTick, onMounted, ref } from "vue";
 
-const activeCategory = ref('All');
+const activeCategory = ref("All");
 
 const sliderStyle = ref({
-  left: '0px',
-  width: '0px',
-  opacity: 0
+  left: "0px",
+  width: "0px",
+  opacity: 0,
 });
 
 // Need to capture the HTML elements to measure them
@@ -15,9 +15,9 @@ const sliderStyle = ref({
 const itemRefs = ref<Record<string, HTMLElement | null>>({});
 
 // Helper to assign refs dynamically in the template
-function setItemRef(el: any, key: string){
+function setItemRef(el: any, key: string) {
   if (el) itemRefs.value[key] = el;
-};
+}
 
 // Find the active element and move the slider there
 async function moveSlider() {
@@ -28,10 +28,10 @@ async function moveSlider() {
     sliderStyle.value = {
       left: `${activeEl.offsetLeft}px`,
       width: `${activeEl.offsetWidth}px`,
-      opacity: 1
+      opacity: 1,
     };
   }
-};
+}
 
 const selectCategory = (category: string) => {
   activeCategory.value = category;
@@ -41,19 +41,20 @@ const selectCategory = (category: string) => {
 // Update position on mount and when window resizes (to keep it aligned)
 onMounted(() => {
   moveSlider();
-  window.addEventListener('resize', moveSlider);
+  window.addEventListener("resize", moveSlider);
 });
 </script>
 
 <template>
-  <div class="relative flex flex-row space-x-8 w-full justify-center text-3xl pb-4">
-
+  <div
+    class="relative flex flex-row space-x-8 w-full justify-center text-3xl pb-4"
+  >
     <div
       class="absolute bottom-0 h-1 bg-[#FFE8DB] rounded-full shadow-[0_0_10px_#FFE8DB] transition-all duration-300 ease-in-out pointer-events-none"
       :style="{
         left: sliderStyle.left,
         width: sliderStyle.width,
-        opacity: sliderStyle.opacity
+        opacity: sliderStyle.opacity,
       }"
     ></div>
 
@@ -76,6 +77,5 @@ onMounted(() => {
     >
       {{ category }}
     </a>
-
   </div>
 </template>
