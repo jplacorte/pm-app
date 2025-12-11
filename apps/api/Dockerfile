@@ -1,38 +1,44 @@
-FROM node:20-alpine AS builder
+# Use the official Node.js image for the build stage.
+FROM node:20 AS builder
 
-WORKDIR /tonberry-api
+# Set the working directory.
+WORKDIR /app
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
-
-# Copy workspace files
-COPY pnpm-workspace.yaml ./
+# Install dependencies.
 COPY package.json pnpm-lock.yaml ./
+RUN pnpm install
 
 # Copy monorepo directories
 COPY packages ./packages
 COPY apps ./apps
 
-# Install ALL monorepo deps
-RUN pnpm install --frozen-lockfile
+# Build the application.
+RUN pnpm build
 
-# 🟢 Generate prisma client INSIDE apps/api WITH deps installed
-RUN DATABASE_URL="postgresql://placeholder" pnpm --filter api prisma generate
+# Use a smaller image for the runtime.
+FROM node:20-slim
 
-# 🟢 Build the NestJS API
-RUN pnpm --filter api build
+# Set the working directory.
+WORKDIR /app
 
+# Install required dependencies, including OpenSSL.
+RUN apt-get update && \
+    apt-get install -y openssl && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
-# -------------------------------------
-# RUNTIME
-# -------------------------------------
-FROM node:20-alpine as runner
+# Copy the build files from the previous stage.
+COPY --from=build /app ./
 
-WORKDIR /tonberry-api
+# Install production dependencies.
+RUN pnpm install --production
+
+# Copy the .env.development file to .env in the container.
+COPY .env .env
+
+# Expose the port that the app runs on.
+EXPOSE 3000
 
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
-# Copy ONLY node_modules needed + built app
-COPY --from=builder tonberry-api/node_modules ./node_modules
-COPY --from=builder tonberry-api/apps/api ./apps/api
-
-CMD ["pnpm", "--filter", "api", "start"]
+CMD ["pnpm", "start"]
