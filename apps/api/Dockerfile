@@ -1,6 +1,6 @@
 FROM node:20-alpine AS builder
 
-WORKDIR /app
+WORKDIR /tonberry-api
 
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
@@ -27,12 +27,12 @@ RUN pnpm --filter api build
 # -------------------------------------
 FROM node:20-alpine as runner
 
-WORKDIR /app
+WORKDIR /tonberry-api
 
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
 # Copy ONLY node_modules needed + built app
-COPY --from=builder app/apps/api/node_modules ./node_modules
-COPY --from=builder app/apps/api ./apps/api
+COPY --from=builder tonberry-api/apps/node_modules ./node_modules
+COPY --from=builder tonberry-api/apps/api ./apps/api
 
 CMD ["pnpm", "--filter", "api", "start"]
