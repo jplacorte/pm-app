@@ -1,15 +1,22 @@
-# Stage 1 builder
 FROM node:18-alpine AS builder
 WORKDIR /workspace
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
-COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+# copy root manifests and turbo config first (for cached installs)
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json turbo.json ./
+# if you use turbo.jsonc, replace the line above with turbo.jsonc
 COPY apps/api/package.json apps/api/package.json
 COPY packages ./packages
-COPY apps/api ./apps/api
+
+ARG SKIP_PRISMA_POSTINSTALL=1
+ENV SKIP_PRISMA_POSTINSTALL=${SKIP_PRISMA_POSTINSTALL}
 
 RUN pnpm install --frozen-lockfile
-RUN pnpm -w turbo run build --filter=api...
+
+# copy rest of repo and build
+COPY . .
+RUN pnpm -w turbo run build --filter=api... --no-cache
+
 
 # Stage 2 runtime
 FROM node:18-alpine AS runner
