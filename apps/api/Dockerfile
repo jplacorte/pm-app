@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------
-# STAGE 1: Base
+# BASE
 # -----------------------------------------------------------------------------
 FROM node:20-alpine AS base
 
@@ -7,98 +7,86 @@ ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 
 RUN corepack enable && \
-    apk add --no-cache dumb-init
+    apk add --no-cache dumb-init openssl openssl-dev
 
 WORKDIR /app
 
 # -----------------------------------------------------------------------------
-# STAGE 2: Dependencies & Prune
+# PRUNE
 # -----------------------------------------------------------------------------
-FROM base AS deps
+FROM base AS prune
 
-# Install turbo (needed for prune)
 RUN pnpm add -g turbo
 
-# Copy monorepo
 COPY . .
 
-# Prune only API dependencies
 RUN turbo prune --scope=api --docker
 
 # -----------------------------------------------------------------------------
-# STAGE 3: Build
+# BUILD
 # -----------------------------------------------------------------------------
-FROM base AS builder
+FROM base AS build
 
 WORKDIR /app
 
-# Copy pruned package manifests
-COPY --from=deps /app/out/json/ .
-COPY --from=deps /app/out/pnpm-lock.yaml ./
+# Copy pruned manifests
+COPY --from=prune /app/out/json/ .
+COPY --from=prune /app/out/pnpm-lock.yaml ./
 
-# Install ALL deps (prod + dev needed for build)
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
+# Install ALL dependencies (dev + prod)
+RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
     pnpm install --frozen-lockfile
 
 # Copy pruned source
-COPY --from=deps /app/out/full/ .
+COPY --from=prune /app/out/full/ .
 
-# Remove env files
-RUN find . -name ".env*" -delete
-
-# Prisma: generate client
-WORKDIR /app/apps/api
-RUN DATABASE_URL="postgresql://placeholder" \
-    pnpm prisma generate --schema=./prisma/schema.prisma
+# ------------------------------------------------------------
+# 🔥 Prisma Generate (AUTO-DETECT schema path)
+# ------------------------------------------------------------
+RUN schema_path=$(find /app -name schema.prisma | head -n 1) && \
+    echo "Found schema at $schema_path" && \
+    DATABASE_URL="postgresql://placeholder" pnpm prisma generate --schema="$schema_path"
 
 # Build API
-WORKDIR /app
 RUN pnpm turbo run build --filter=api...
 
 # -----------------------------------------------------------------------------
-# STAGE 4: Production Dependencies Only
+# PRODUCTION DEPS
 # -----------------------------------------------------------------------------
 FROM base AS prod-deps
 
 WORKDIR /app
 
-COPY --from=deps /app/out/json/ .
-COPY --from=deps /app/out/pnpm-lock.yaml ./
+COPY --from=prune /app/out/json/ .
+COPY --from=prune /app/out/pnpm-lock.yaml ./
 
-# Install only production deps
-RUN --mount=type=cache,id=pnpm-prod,target=/pnpm/store \
-    pnpm install --frozen-lockfile --prod
+RUN --mount=type=cache,id=pnpm-prod-store,target=/pnpm/store \
+    pnpm install --prod --frozen-lockfile
 
 # -----------------------------------------------------------------------------
-# STAGE 5: Runner
+# RUNNER
 # -----------------------------------------------------------------------------
 FROM node:20-alpine AS runner
 
-RUN apk add --no-cache dumb-init
+RUN apk add --no-cache dumb-init openssl
 
 WORKDIR /app
 
-# Create user
+# Create non-root user
 RUN addgroup -S nodejs && adduser -S nestjs -G nodejs
 
-# Copy node_modules
+# Copy production node_modules
 COPY --from=prod-deps --chown=nestjs:nodejs /app/node_modules ./node_modules
 
-# Copy built output
-COPY --from=builder --chown=nestjs:nodejs /app/apps/api/dist ./dist
-COPY --from=builder --chown=nestjs:nodejs /app/apps/api/package.json ./package.json
+# Copy built files
+COPY --from=build --chown=nestjs:nodejs /app/apps/api/dist ./dist
+COPY --from=build --chown=nestjs:nodejs /app/apps/api/package.json ./package.json
 
-# Prisma schema (optional but safe)
-COPY --from=builder --chown=nestjs:nodejs /app/apps/api/prisma/schema.prisma ./prisma/schema.prisma
-
-# Prisma Client
-COPY --from=builder --chown=nestjs:nodejs /app/apps/api/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder --chown=nestjs:nodejs /app/apps/api/node_modules/@prisma ./node_modules/@prisma
+# Copy Prisma Client (generated)
+COPY --from=build --chown=nestjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=build --chown=nestjs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
 
 USER nestjs
-
-HEALTHCHECK --interval=30s --timeout=3s --start-period=30s --retries=3 \
-    CMD wget -qO- http://localhost:3000/health || exit 1
 
 EXPOSE 3000
 
