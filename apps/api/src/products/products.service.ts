@@ -1,8 +1,4 @@
-import {
-  ForbiddenException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -22,11 +18,8 @@ export class ProductsService {
   }
 
   // Filter by userId
-  async findAll(userId: number) {
+  async findAll() {
     return this.prisma.product.findMany({
-      where: {
-        userId,
-      },
       orderBy: {
         createdAt: 'desc',
       },
@@ -34,21 +27,19 @@ export class ProductsService {
   }
 
   // Ensure user owns the product
-  async findOne(id: number, userId: number) {
+  async findOne(id: number) {
     const product = await this.prisma.product.findUnique({
       where: { id },
     });
 
     if (!product) throw new NotFoundException('Product not found');
-    if (product.userId !== userId)
-      throw new ForbiddenException('Access denied');
 
     return product;
   }
 
-  async update(id: number, userId: number, updateProductDto: UpdateProductDto) {
+  async update(id: number, updateProductDto: UpdateProductDto) {
     // Check ownership first
-    await this.findOne(id, userId);
+    await this.findOne(id);
 
     return this.prisma.product.update({
       where: { id },
@@ -56,9 +47,9 @@ export class ProductsService {
     });
   }
 
-  async remove(id: number, userId: number) {
+  async remove(id: number) {
     // Check ownership first
-    await this.findOne(id, userId);
+    await this.findOne(id);
 
     return this.prisma.product.delete({
       where: { id },

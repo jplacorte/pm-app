@@ -54,27 +54,26 @@ export class ProductsController {
   }
 
   @Get()
-  findAll(@Request() req) {
+  findAll() {
     // Filter by logged-in user
-    return this.productsService.findAll(req.user.id);
+    return this.productsService.findAll();
   }
 
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number, @Request() req) {
-    return this.productsService.findOne(id, req.user.id);
+    return this.productsService.findOne(id);
   }
 
   @Patch(':id')
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateProductDto: UpdateProductDto,
-    @Request() req,
   ) {
-    return this.productsService.update(id, req.user.id, updateProductDto);
+    return this.productsService.update(id, updateProductDto);
   }
 
   @Delete(':id')
   remove(@Param('id', ParseIntPipe) id: number, @Request() req) {
-    return this.productsService.remove(id, req.user.id);
+    return this.productsService.remove(id);
   }
 }
