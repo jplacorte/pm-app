@@ -31,10 +31,10 @@ FROM node:20-alpine AS runner
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
 # Copy workspace node_modules (includes Prisma)
-COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder apps/node_modules ./node_modules
 
 # Copy only the API project
-COPY --from=builder /app/apps/api ./apps/api
+COPY --from=builder apps/api ./apps/api
 
 USER node
 
