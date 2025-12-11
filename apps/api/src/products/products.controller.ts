@@ -4,14 +4,16 @@ import {
   Controller,
   Delete,
   Get,
-  NotFoundException,
   Param,
   ParseIntPipe,
   Patch,
   Post,
+  Request,
   UploadedFile,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -19,6 +21,7 @@ import { UpdateProductDto } from './dto/update-product.dto';
 import { ProductsService } from './products.service';
 
 @Controller('products')
+@UseGuards(AuthGuard('jwt')) // Protect all routes in this controller
 export class ProductsController {
   constructor(
     private readonly productsService: ProductsService,
@@ -28,55 +31,50 @@ export class ProductsController {
   @Post()
   @UseInterceptors(FileInterceptor('image'))
   async create(
-    @Body() body: any, // We use 'any' temporarily to handle parsing manually
+    @Request() req, // Inject Request to get user
+    @Body() body: any,
     @UploadedFile() file: Express.Multer.File,
   ) {
     if (!file) {
       throw new BadRequestException('Image file is required');
     }
 
-    // 1. Upload to Cloudinary
     const imageUrl = await this.cloudinaryService.uploadImage(file);
 
-    // 2. Parse and Validate Body
-    // FormData sends numbers as strings, so we parse them here
     const productData: CreateProductDto = {
       name: body.name,
+      description: body.description,
       price: parseFloat(body.price),
       category: body.category,
       image: imageUrl,
     };
 
-    // Note: You can add manual Zod validation here if needed:
-    // CreateProductDto.schema.parse(productData);
-
-    return this.productsService.create(productData);
+    // Pass user.id from the token
+    return this.productsService.create(req.user.id, productData);
   }
 
   @Get()
-  findAll() {
-    return this.productsService.findAll();
+  findAll(@Request() req) {
+    // Filter by logged-in user
+    return this.productsService.findAll(req.user.id);
   }
 
   @Get(':id')
-  async findOne(@Param('id', ParseIntPipe) id: number) {
-    const product = await this.productsService.findOne(id);
-    if (!product) {
-      throw new NotFoundException(`Product with ID ${id} not found`);
-    }
-    return product;
+  findOne(@Param('id', ParseIntPipe) id: number, @Request() req) {
+    return this.productsService.findOne(id, req.user.id);
   }
 
   @Patch(':id')
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateProductDto: UpdateProductDto,
+    @Request() req,
   ) {
-    return this.productsService.update(id, updateProductDto);
+    return this.productsService.update(id, req.user.id, updateProductDto);
   }
 
   @Delete(':id')
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.productsService.remove(id);
+  remove(@Param('id', ParseIntPipe) id: number, @Request() req) {
+    return this.productsService.remove(id, req.user.id);
   }
 }
