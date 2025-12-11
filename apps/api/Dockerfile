@@ -1,54 +1,39 @@
-# 1. Base setup
-FROM node:20-slim AS base
-ENV PNPM_HOME="/pnpm"
-ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable
-
-# 2. Builder Stage
-FROM base AS builder
+# Stage 1: deps + build
+FROM node:18-alpine AS builder
 WORKDIR /app
 
-# Copy the entire repository
-# (Ensure your .dockerignore excludes node_modules to keep this fast)
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+# Copy only lockfiles and package manifests to leverage layer caching
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY apps/api/package.json apps/api/
+COPY packages ./packages
+
+# Install dependencies (no build yet)
+RUN pnpm install --frozen-lockfile --prefer-offline
+
+# Copy source and build only the api app
 COPY . .
+RUN pnpm -w turbo run build --filter=api...
 
-# Install dependencies (including dev deps for building)
-RUN pnpm install --frozen-lockfile
-
-# Generate Prisma Client
-# We run this explicitly to ensure the client is generated for the build
-RUN pnpm --filter=api exec prisma generate
-
-# Build the API application
-RUN pnpm --filter=api build
-
-# Create a deployed production version of the app
-# This isolates the specific app and installs ONLY production dependencies into /prod/api
-RUN pnpm --filter=api deploy --prod /prod/api
-
-# 3. Runner Stage (Production)
-FROM node:20-slim AS runner
+# Stage 2: production image
+FROM node:18-alpine AS runner
 WORKDIR /app
 
-# Install OpenSSL (Required for Prisma Client in production)
-RUN apt-get update -y && \
-    apt-get install -y openssl ca-certificates && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+# Create non-root user
+RUN addgroup -S app && adduser -S -G app app
+USER app
 
-# Copy the isolated production dependencies and package files
-COPY --from=builder /prod/api ./
-
-# Copy the compiled application from the builder
+# Copy built artifacts and production deps
 COPY --from=builder /app/apps/api/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/apps/api/package.json ./package.json
 
-# Copy the prisma schema (Required if your app reads it at runtime, usually usually bundled but good safety)
-COPY --from=builder /app/apps/api/prisma ./prisma
-
-# Set production environment
 ENV NODE_ENV=production
-
 EXPOSE 3000
 
-# Run the compiled app directly (Bypassing Nest CLI)
-CMD ["node", "dist/main"]
+# Healthcheck (adjust path/port to your app)
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s CMD wget -qO- http://localhost:3000/health || exit 1
+
+CMD ["node", "dist/server.js"]
