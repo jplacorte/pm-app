@@ -2,7 +2,7 @@
   "name": "api",
   "version": "0.0.1",
   "description": "",
-  "author": "",
+  "author": "John Phillip Lacorte",
   "private": true,
   "license": "UNLICENSED",
   "packageManager": "pnpm@9.0.0",
