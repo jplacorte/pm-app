@@ -1,89 +1,75 @@
 # -----------------------------------------------------------------------------
-# STAGE 1: Prune
-# This stage isolates the "api" app and only its specific dependencies
-# from the rest of the monorepo.
+# STAGE 1: Base
+# Setup pnpm environment variables and enable corepack
 # -----------------------------------------------------------------------------
-FROM node:20-alpine AS prune
+FROM node:20-alpine AS base
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable
+
+# -----------------------------------------------------------------------------
+# STAGE 2: Prune
+# Isolate the API and its dependencies from the monorepo
+# -----------------------------------------------------------------------------
+FROM base AS prune
 WORKDIR /app
-
-# Install turbo globally to run the prune command
 RUN npm install -g turbo
-
-# Copy all source files (package.json, lockfile, turbo.json, workspace configs)
 COPY . .
-
-# Prune the workspace to include only "api" and its internal dependencies (like @pm-web/types)
-# "api" here matches the "name" field in apps/api/package.json
 RUN turbo prune --scope=api --docker
 
 # -----------------------------------------------------------------------------
-# STAGE 2: Install & Build
-# This stage installs dependencies and builds the application.
+# STAGE 3: Builder
+# Install dependencies, build, and prepare the deployment directory
 # -----------------------------------------------------------------------------
-FROM node:20-alpine AS builder
+FROM base AS builder
 WORKDIR /app
 
-# Enable pnpm (using the version specified in root package.json)
-# [FIXED TYPO HERE] Changed RUNHP to RUN
-RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
-
-# [FIX] Force pnpm to hoist dependencies to the root node_modules
-# This prevents "Cannot find module" errors caused by pnpm's default symlinked structure
-RUN echo "node-linker=hoisted" > .npmrc
-
-# Copy the "json" folder from the prune stage.
-# This contains package.json files for the API and its dependencies.
+# Copy lockfile and package.json's from prune stage
 COPY --from=prune /app/out/json/ .
 COPY --from=prune /app/out/pnpm-lock.yaml ./
 
-# Install dependencies (only what's needed for the API)
+# Install ALL dependencies (including devDependencies like @nestjs/cli)
 RUN pnpm install --frozen-lockfile
 
-# Copy the "full" folder from the prune stage.
-# This contains the actual source code for the API and packages.
+# Copy source code
 COPY --from=prune /app/out/full/ .
 
-# [FIX] Set a dummy DATABASE_URL so Prisma can validate the config/schema during generation
+# Generate Prisma Client
+# We provide a dummy URL so Prisma can validate the schema/config during generation
 ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
-
-# [FIX] Generate Prisma Client
-# This creates the necessary client files in node_modules based on your schema
 RUN cd apps/api && npx prisma generate
 
 # Build the project
-# This runs the "build" script defined in apps/api/package.json
 RUN pnpm turbo run build --filter=api...
 
+# [FIX] Use 'pnpm deploy' to create a production-ready slice of the app
+# This installs only production dependencies into /app/deploy/node_modules
+# and handles workspace links (like @pm-web/types) automatically.
+RUN pnpm deploy --filter=api --prod /app/deploy
+
+# [FIX] Copy the built artifacts to the deploy folder
+# pnpm deploy essentially copies the source/package.json, but not ignored build artifacts like 'dist'
+RUN cp -r apps/api/dist /app/deploy/dist
+RUN cp -r apps/api/prisma /app/deploy/prisma
 
 # -----------------------------------------------------------------------------
-# STAGE 3: Production Runner
-# This stage creates the final, minimal image for production.
+# STAGE 4: Runner
+# Final production image
 # -----------------------------------------------------------------------------
-FROM node:20-alpine AS runner
+FROM base AS runner
 WORKDIR /app
 
-# Don't run as root for security reasons
+# Don't run as root
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nestjs
 USER nestjs
 
-# Copy the flat node_modules
-COPY --from=builder --chown=nestjs:nodejs /app/node_modules ./node_modules
+# Copy the completely self-contained application from the builder
+COPY --from=builder --chown=nestjs:nodejs /app/deploy .
 
-# Copy the built application from the builder stage
-COPY --from=builder --chown=nestjs:nodejs /app/apps/api/dist ./apps/api/dist
-COPY --from=builder --chown=nestjs:nodejs /app/apps/api/package.json ./apps/api/package.json
-
-# [FIX] Copy workspace packages
-# Without these, resolving @pm-web/types might fail if code relies on them at runtime
-COPY --from=builder --chown=nestjs:nodejs /app/packages ./packages
-
-# [FIX] Copy prisma directory
-# Useful if you ever need to run migrations in production
-COPY --from=builder --chown=nestjs:nodejs /app/apps/api/prisma ./apps/api/prisma
-
-# Expose the port NestJS listens on (matches main.ts)
+# Expose port
 EXPOSE 3000
 
 # Start the application
-CMD ["node", "apps/api/dist/main"]
+# Note: pnpm deploy flattens the structure, so we are running from the root of the deployed app
+CMD ["node", "dist/main.js"]
