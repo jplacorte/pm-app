@@ -42,28 +42,32 @@ COPY --from=deps /app/out/full/ .
 # Remove any .env files to prevent secrets from being baked in
 RUN find . -name ".env*" -type f -delete
 
+# Generate Prisma Client FIRST (with all dependencies available)
+WORKDIR /app/apps/api
+RUN DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy" \
+    npx prisma generate
+
 # Build the project with dummy DATABASE_URL
+WORKDIR /app
 RUN DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy" \
     pnpm turbo run build --filter=api...
 
-# Create production deployment with only runtime dependencies
-RUN pnpm deploy --filter=api --prod /prod
+# -----------------------------------------------------------------------------
+# STAGE 4: Production Dependencies
+# -----------------------------------------------------------------------------
+FROM base AS prod-deps
+WORKDIR /app
 
-# Copy build artifacts and prisma schema to production folder
-RUN cp -r apps/api/dist /prod/ && \
-    cp -r apps/api/prisma /prod/
+# Copy pruned package files
+COPY --from=deps /app/out/json/ .
+COPY --from=deps /app/out/pnpm-lock.yaml ./
 
-# Generate Prisma Client in production folder
-WORKDIR /prod
-RUN DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy" \
-    npx prisma generate --schema=./prisma/schema.prisma
-
-# Final cleanup
-RUN find /prod -name ".env*" -type f -delete && \
-    rm -rf /prod/.pnpm-store
+# Install ONLY production dependencies
+RUN --mount=type=cache,id=pnpm-prod,target=/pnpm/store \
+    pnpm install --frozen-lockfile --prod
 
 # -----------------------------------------------------------------------------
-# STAGE 4: Runner (Production)
+# STAGE 5: Runner (Production)
 # -----------------------------------------------------------------------------
 FROM node:20-alpine AS runner
 
@@ -76,8 +80,18 @@ WORKDIR /app
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nestjs
 
-# Copy production dependencies and built application
-COPY --from=builder --chown=nestjs:nodejs /prod ./
+# Copy production dependencies
+COPY --from=prod-deps --chown=nestjs:nodejs /app/node_modules ./node_modules
+COPY --from=prod-deps --chown=nestjs:nodejs /app/apps/api/node_modules ./node_modules
+
+# Copy built application
+COPY --from=builder --chown=nestjs:nodejs /app/apps/api/dist ./dist
+COPY --from=builder --chown=nestjs:nodejs /app/apps/api/package.json ./package.json
+
+# Copy Prisma schema and generated client
+COPY --from=builder --chown=nestjs:nodejs /app/apps/api/prisma ./prisma
+COPY --from=builder --chown=nestjs:nodejs /app/apps/api/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder --chown=nestjs:nodejs /app/apps/api/node_modules/@prisma ./node_modules/@prisma
 
 # Switch to non-root user
 USER nestjs
