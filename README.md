@@ -1,135 +1,136 @@
-# Turborepo starter
+# Tonberry Cafe - Product Management App
 
-This Turborepo starter is maintained by the Turborepo core team.
+A full-stack monorepo application for managing cafe products. This project consists of a **NestJS** backend API and a **Vue 3** frontend, managed with **Turborepo** and **pnpm**.
 
-## Using this example
+## 🚀 Tech Stack
 
-Run the following command:
+- **Monorepo Tool:** Turborepo
+- **Package Manager:** pnpm
+- **Backend:** NestJS, Prisma, PostgreSQL
+- **Frontend:** Vue 3, Vite, Tailwind CSS
+- **UI Library:** Custom shared UI package + FontAwesome
+- **Testing:** Jest (Backend), Vitest (Frontend)
+- **Containerization:** Docker
 
-```sh
-npx create-turbo@latest
+---
+
+## 🛠️ Prerequisites
+
+Ensure you have the following installed on your machine:
+
+- **Node.js** (v18 or higher)
+- **pnpm** (`npm install -g pnpm`)
+- **Docker** & **Docker Compose** (for the database)
+
+---
+
+## 📦 Project Structure
+
+```text
+.
+├── apps
+│   ├── api          # NestJS Backend Application
+│   └── pm-app       # Vue 3 Frontend Application
+├── packages
+│   ├── ui           # Shared Vue UI Component Library
+│   ├── types        # Shared TypeScript Interfaces/Types
+│   ├── eslint-config # Shared ESLint configurations
+│   └── typescript-config # Shared TSConfig files
+└── docker-compose.yml
+
+⚙️ Setup & Installation
+
+1. Clone the repository
+
+git clone <repository-url>
+cd pm-app
+
+2. Install dependencies
+From the root directory, run:
+
+pnpm install
+
+3. Environment Configuration
+You need to set up environment variables for both the API and the Frontend.
+
+Backend (apps/api)
+Create a .env file in apps/api/:
+
+# apps/api/.env
+
+# Database Connection (matches docker-compose.yml)
+DATABASE_URL="postgresql://postgres:password@localhost:5432/pm_db?schema=public"
+
+# Authentication
+JWT_SECRET="super-secret-key-change-this"
+
+# Cloudinary (Image Uploads)
+CLOUDINARY_NAME="your_cloud_name"
+CLOUDINARY_API_KEY="your_api_key"
+CLOUDINARY_API_SECRET="your_api_secret"
+
+Frontend (apps/pm-app)
+Create a .env file in apps/pm-app/:
+
+# apps/pm-app/.env
+
+# URL of the Backend API
+VITE_API_URL="http://localhost:3000"
+
+🗄️ Database Setup
+The easiest way to set up the database is using the provided Docker Compose file.
+
+1. Start the Database Container:
+docker-compose up db -d
+
+2. Run Migrations: Initialize the database schema using Prisma.
+pnpm --filter api exec prisma migrate dev --name init
+
+▶️ Running the Application
+
+Development Mode
+To start both the Backend API and Frontend simultaneously in watch mode:
+
+pnpm dev
+
+Frontend: http://localhost:5173
+Backend: http://localhost:3000
+
+Production Mode (Docker)
+To build and run the entire stack (API + Database) using Docker:
+
+docker-compose up --build
+
+🧪 Testing
+This project includes unit tests for both the backend logic and frontend components.
+
+Run All Tests
+pnpm test
+
+Run Backend Tests Only
+pnpm test:api
+
+Run Frontend Tests Only
+pnpm test:app
+
+Run E2E Tests (Backend)
+pnpm --filter=api run test:e2e
+
+📝 Key Features
+Authentication: Secure Login and Registration using JWT.
+
+Product Management: CRUD operations for products (Create, Read, Update, Delete).
+
+Image Uploads: Integrated with Cloudinary for product images.
+
+Shared UI: Reusable components (Card, Button, Modal, Input, etc.) in packages/ui.
+
+Type Safety: Shared TypeScript types between frontend and backend in packages/types.
+
+🐛 Troubleshooting
+Database Connection Error: Ensure the Docker container for Postgres is running (docker ps). Check if the DATABASE_URL in .env matches the credentials in docker-compose.yml.
+
+Cloudinary Error: Ensure you have created a free Cloudinary account and populated the API keys in apps/api/.env.
+
+Missing Dependencies: If you encounter module errors, try running pnpm install again or check if you are using the correct Node version.
 ```
-
-## What's inside?
-
-This Turborepo includes the following packages/apps:
-
-### Apps and Packages
-
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
-
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build
-yarn dlx turbo build
-pnpm exec turbo build
-```
-
-You can build a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
-
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build --filter=docs
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build --filter=docs
-yarn exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-```
-
-### Develop
-
-To develop all apps and packages, run the following command:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev
-yarn exec turbo dev
-pnpm exec turbo dev
-```
-
-You can develop a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
-
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev --filter=web
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev --filter=web
-yarn exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-```
-
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo login
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo login
-yarn exec turbo login
-pnpm exec turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo link
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo link
-yarn exec turbo link
-pnpm exec turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.com/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.com/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.com/docs/reference/configuration)
-- [CLI Usage](https://turborepo.com/docs/reference/command-line-reference)
