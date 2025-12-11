@@ -1,44 +1,54 @@
-# Use the official Node.js image for the build stage.
-FROM node:20 AS builder
+# 1. Base setup
+FROM node:20-slim AS base
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable
 
-# Set the working directory.
+# 2. Builder Stage
+FROM base AS builder
 WORKDIR /app
 
-# Install dependencies.
-COPY package.json pnpm-lock.yaml ./
-RUN pnpm install
+# Copy the entire repository
+# (Ensure your .dockerignore excludes node_modules to keep this fast)
+COPY . .
 
-# Copy monorepo directories
-COPY packages ./packages
-COPY apps ./apps
+# Install dependencies (including dev deps for building)
+RUN pnpm install --frozen-lockfile
 
-# Build the application.
-RUN pnpm build
+# Generate Prisma Client
+# We run this explicitly to ensure the client is generated for the build
+RUN pnpm --filter=api exec prisma generate
 
-# Use a smaller image for the runtime.
-FROM node:20-slim
+# Build the API application
+RUN pnpm --filter=api build
 
-# Set the working directory.
+# Create a deployed production version of the app
+# This isolates the specific app and installs ONLY production dependencies into /prod/api
+RUN pnpm --filter=api deploy --prod /prod/api
+
+# 3. Runner Stage (Production)
+FROM node:20-slim AS runner
 WORKDIR /app
 
-# Install required dependencies, including OpenSSL.
-RUN apt-get update && \
-    apt-get install -y openssl && \
+# Install OpenSSL (Required for Prisma Client in production)
+RUN apt-get update -y && \
+    apt-get install -y openssl ca-certificates && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Copy the build files from the previous stage.
-COPY --from=build /app ./
+# Copy the isolated production dependencies and package files
+COPY --from=builder /prod/api ./
 
-# Install production dependencies.
-RUN pnpm install --production
+# Copy the compiled application from the builder
+COPY --from=builder /app/apps/api/dist ./dist
 
-# Copy the .env.development file to .env in the container.
-COPY .env .env
+# Copy the prisma schema (Required if your app reads it at runtime, usually usually bundled but good safety)
+COPY --from=builder /app/apps/api/prisma ./prisma
 
-# Expose the port that the app runs on.
+# Set production environment
+ENV NODE_ENV=production
+
 EXPOSE 3000
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
-
-CMD ["pnpm", "start"]
+# Run the compiled app directly (Bypassing Nest CLI)
+CMD ["node", "dist/main"]
