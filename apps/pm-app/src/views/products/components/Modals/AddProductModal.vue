@@ -2,7 +2,7 @@
 import { reactive, ref } from "vue";
 import { Modal, TextButton, TextInput, Dropdown } from "@pm-web/ui";
 import { Categories } from "@pm-web/types";
-import { useApi } from "../../../composables/useApi";
+import { useApi } from "../../../../composables/useApi";
 
 const props = defineProps<{
   isOpen: boolean;
@@ -17,11 +17,11 @@ const { request, loading, error } = useApi();
 
 const form = reactive({
   name: "",
+  description: "", // <--- Add state
   price: "",
   category: "",
 });
 
-// State for the selected file
 const selectedFile = ref<File | null>(null);
 const previewUrl = ref<string | null>(null);
 
@@ -30,32 +30,38 @@ const handleFileChange = (event: Event) => {
   if (target.files && target.files[0]) {
     const file = target.files[0];
     selectedFile.value = file;
-    // Create local preview
     previewUrl.value = URL.createObjectURL(file);
   }
 };
 
 const handleSubmit = async () => {
-  if (!form.name || !form.price || !form.category || !selectedFile.value) {
+  if (
+    !form.name ||
+    !form.description ||
+    !form.price ||
+    !form.category ||
+    !selectedFile.value
+  ) {
     alert("Please fill in all required fields and select an image.");
     return;
   }
 
-  // 1. Create FormData
   const formData = new FormData();
   formData.append("name", form.name);
-  formData.append("price", form.price); // Sent as string
+  formData.append("description", form.description); // <--- Append to payload
+  formData.append("price", form.price);
   formData.append("category", form.category);
-  formData.append("image", selectedFile.value); // Append the file
+  formData.append("image", selectedFile.value);
 
-  // 2. Send Request (useApi handles headers automatically)
   const response = await request("/products", {
     method: "POST",
     body: formData,
   });
 
   if (response) {
+    // Reset form
     form.name = "";
+    form.description = "";
     form.price = "";
     form.category = "";
     selectedFile.value = null;
@@ -78,6 +84,12 @@ const handleSubmit = async () => {
         label="Product Name"
         v-model="form.name"
         placeholder="e.g. Strawberry Shortcake"
+      />
+
+      <TextInput
+        label="Description"
+        v-model="form.description"
+        placeholder="e.g. A sweet delight made with fresh strawberries..."
       />
 
       <div class="grid grid-cols-2 gap-4">

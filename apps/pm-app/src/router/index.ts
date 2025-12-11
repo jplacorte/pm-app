@@ -1,16 +1,10 @@
-// src/router/index.ts
-import { createRouter, createWebHistory } from "vue-router";
-// IMPORT THIS TYPE
 import type { RouteRecordRaw } from "vue-router";
+import { createRouter, createWebHistory } from "vue-router";
 
-import HomeView from "../views/Home.vue";
-
-// Type the array strictly
 const routes: Array<RouteRecordRaw> = [
   {
     path: "/",
-    name: "home",
-    component: HomeView,
+    redirect: "/products", // Redirect root to products
   },
   {
     path: "/auth/login",
@@ -24,21 +18,32 @@ const routes: Array<RouteRecordRaw> = [
   },
   {
     path: "/products",
-    // Component is required for a parent route if it has a <router-view> inside
+    name: "products",
     component: () => import("../views/products/Products.vue"),
-    children: [
-      {
-        path: "settings",
-        name: "settings",
-        component: () => import("../views/products/Settings.vue"),
-      },
-    ],
+    // children: [
+    //   {
+    //     path: "settings",
+    //     name: "settings",
+    //     component: () => import("../views/products/Settings.vue"),
+    //   },
+    // ],
   },
 ];
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
-  routes, // shorthand for routes: routes
+  routes,
+});
+
+router.beforeEach((to, _from, next) => {
+  const isAuthenticated = localStorage.getItem("accessToken");
+  const publicRoutes = ["login", "register"];
+
+  if (!publicRoutes.includes(to.name as string) && !isAuthenticated) {
+    next({ name: "login" });
+  } else {
+    next();
+  }
 });
 
 export default router;

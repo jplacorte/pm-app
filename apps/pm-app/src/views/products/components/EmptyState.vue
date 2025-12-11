@@ -1,14 +1,16 @@
 <script setup lang="ts">
 interface Props {
-  products: number;
+  visible?: boolean;
 }
-
-defineProps<Props>();
+// 3. Set default values
+withDefaults(defineProps<Props>(), {
+  visible: false,
+});
 </script>
 
 <template>
   <div
-    v-if="products === 0"
+    v-if="visible"
     class="flex flex-col justify-center items-center h-64 text-gray-400"
   >
     <p class="text-5xl font-['Pacifico',cursive] font-bold text-[#FFE8DB]">

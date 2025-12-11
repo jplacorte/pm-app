@@ -1,21 +1,46 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import Categories from "./components/Categories.vue";
+import type { Product } from "@pm-web/types";
+import { Categories, ToggleButton, AddButton } from "./components/Buttons/";
+import {
+  AddProductModal,
+  DeleteProductModal,
+  UpdateProductModal,
+  ViewProductModal,
+} from "./components/Modals/";
 import GridView from "./GridView.vue";
 import ListView from "./ListView.vue";
-import ToggleButton from "./components/ToggleButton.vue";
-import AddButton from "./components/AddButton.vue";
-import AddProductModal from "./components/AddProducModal.vue";
 
 const viewMode = ref<"grid" | "list">("grid");
-const showAddModal = ref(false);
+const selectedCategory = ref("All");
 const refreshKey = ref(0);
 
-// 1. Initialize default category to 'All'
-const selectedCategory = ref("All");
+// Modal States
+const showAddModal = ref(false);
+const showEditModal = ref(false);
+const showDeleteModal = ref(false);
+const showViewModal = ref(false);
+const selectedProduct = ref<Product | null>(null);
 
 const handleRefresh = () => {
   refreshKey.value++;
+};
+
+// Handlers
+const openViewModal = (product: Product) => {
+  // <--- New Handler
+  selectedProduct.value = product;
+  showViewModal.value = true;
+};
+
+const openEditModal = (product: Product) => {
+  selectedProduct.value = product;
+  showEditModal.value = true;
+};
+
+const openDeleteModal = (product: Product) => {
+  selectedProduct.value = product;
+  showDeleteModal.value = true;
 };
 </script>
 
@@ -37,17 +62,43 @@ const handleRefresh = () => {
         v-if="viewMode === 'grid'"
         :key="`grid-${refreshKey}`"
         :selectedCategory="selectedCategory"
+        @view="openViewModal"
+        @edit="openEditModal"
+        @delete="openDeleteModal"
       />
       <ListView
         v-else-if="viewMode === 'list'"
         :key="`list-${refreshKey}`"
         :selectedCategory="selectedCategory"
+        @view="openViewModal"
+        @edit="openEditModal"
+        @delete="openDeleteModal"
       />
     </div>
 
     <AddProductModal
       :isOpen="showAddModal"
       @close="showAddModal = false"
+      @refresh="handleRefresh"
+    />
+
+    <ViewProductModal
+      :isOpen="showViewModal"
+      :product="selectedProduct"
+      @close="showViewModal = false"
+    />
+
+    <UpdateProductModal
+      :isOpen="showEditModal"
+      :product="selectedProduct"
+      @close="showEditModal = false"
+      @refresh="handleRefresh"
+    />
+
+    <DeleteProductModal
+      :isOpen="showDeleteModal"
+      :product="selectedProduct"
+      @close="showDeleteModal = false"
       @refresh="handleRefresh"
     />
   </div>
