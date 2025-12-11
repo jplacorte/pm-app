@@ -1,38 +1,42 @@
+# -------------------------------------
+# BUILDER
+# -------------------------------------
 FROM node:20-alpine AS builder
-
-WORKDIR /app
 
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
-# Copy workspace files
+# Copy workspace root files
 COPY pnpm-workspace.yaml ./
 COPY package.json pnpm-lock.yaml ./
 
-# Copy monorepo directories
-COPY packages ./packages
+# Copy monorepo
 COPY apps ./apps
+COPY packages ./packages
 
-# Install ALL monorepo deps
+# Install all dependencies (workspace)
 RUN pnpm install --frozen-lockfile
 
-# 🟢 Generate prisma client INSIDE apps/api WITH deps installed
-RUN DATABASE_URL="postgresql://placeholder" pnpm --filter api prisma generate
+# 🟢 Generate Prisma Client inside API workspace
+RUN DATABASE_URL="postgresql://placeholder" \
+    pnpm --filter api prisma generate
 
-# 🟢 Build the NestJS API
+# 🟢 Build NestJS API
 RUN pnpm --filter api build
 
-
 # -------------------------------------
-# RUNTIME
+# RUNTIME IMAGE
 # -------------------------------------
-FROM node:20-alpine as runner
-
-WORKDIR /app
+FROM node:20-alpine AS runner
 
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
-# Copy ONLY node_modules needed + built app
+# Copy workspace node_modules (includes Prisma)
 COPY --from=builder /app/node_modules ./node_modules
+
+# Copy only the API project
 COPY --from=builder /app/apps/api ./apps/api
 
+USER node
+
+EXPOSE 3000
 CMD ["pnpm", "--filter", "api", "start"]
