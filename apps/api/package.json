@@ -27,12 +27,16 @@
 		"@nestjs/platform-express": "^11.0.1",
 		"@pm-web/types": "workspace:^",
 		"@prisma/client": "6",
+		"@types/multer": "^2.0.0",
+		"@types/streamifier": "^0.1.2",
 		"bcrypt": "^6.0.0",
+		"cloudinary": "^2.8.0",
 		"nestjs-zod": "^5.0.1",
 		"passport": "^0.7.0",
 		"passport-jwt": "^4.0.1",
 		"reflect-metadata": "^0.2.2",
 		"rxjs": "^7.8.1",
+		"streamifier": "^0.1.1",
 		"zod": "^4.1.13"
 	},
 	"devDependencies": {
