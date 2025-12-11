@@ -6,6 +6,9 @@
   "private": true,
   "license": "UNLICENSED",
   "packageManager": "pnpm@9.0.0",
+  "prisma": {
+    "schema": "./prisma"
+  },
   "scripts": {
     "build": "nest build",
     "dev": "nest start --watch",

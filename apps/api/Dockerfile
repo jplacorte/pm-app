@@ -10,6 +10,9 @@ COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/api/package.json apps/api/
 COPY packages ./packages
 
+# copy prisma schema early
+COPY apps/api/prisma ./apps/api/prisma
+
 # Install dependencies (no build yet)
 RUN pnpm install --frozen-lockfile --prefer-offline
 
