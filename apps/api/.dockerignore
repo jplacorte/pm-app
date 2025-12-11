@@ -1,0 +1,73 @@
+# Dependencies
+node_modules
+.pnpm-store
+**/node_modules
+
+# Build outputs
+dist
+build
+.turbo
+.next
+out
+**/dist
+**/build
+
+# Environment files
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Testing
+coverage
+.nyc_output
+**/__tests__
+**/*.test.ts
+**/*.spec.ts
+
+# Documentation
+*.md
+!README.md
+docs
+
+# CI/CD
+.github
+.gitlab-ci.yml
+.circleci
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Logs
+logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Misc
+.editorconfig
+.prettierrc
+.eslintrc
+.eslintignore
+tsconfig.json
