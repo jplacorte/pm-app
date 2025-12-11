@@ -1,0 +1,42 @@
+// apps/api/prisma/schema.prisma
+
+// 1. Generator Block: Tells Prisma to generate the TypeScript client
+generator client {
+  provider      = "prisma-client-js"
+  // binaryTargets are needed for cross-platform compatibility
+  // "native" runs on your local machine (Mac/Windows)
+  // "linux-musl-openssl-3.0.x" runs inside the Docker container (Alpine Linux)
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+// 2. Datasource Block: Defines the connection to your database
+datasource db {
+  provider = "postgresql"
+  // This uses the DATABASE_URL environment variable from your .env file
+  url      = env("DATABASE_URL")
+}
+
+// 3. User Model: Stores account information for Authentication
+model User {
+  id        Int      @id @default(autoincrement()) // Unique numeric ID
+  email     String   @unique                       // Email must be unique
+  password  String                                 // Hashed password (not plain text)
+  name      String?                                // Optional full name
+  role      String   @default("user")              // e.g. "admin" or "user"
+
+  // Timestamps to track creation and updates automatically
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// 4. Product Model: Stores the data for your Menu/Inventory
+model Product {
+  id        Int      @id @default(autoincrement())
+  name      String
+  price     Float
+  category  String   // Matches your frontend categories (e.g. "Beverage")
+  image     String   // Stores the URL to the image, not the binary data
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

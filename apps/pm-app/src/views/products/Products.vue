@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import Category from "./Category.vue";
+import Categories from "./components/Categories.vue";
 import GridView from "./GridView.vue";
 import ListView from "./ListView.vue";
-import ToggleButton from "./ToggleButton.vue";
+import ToggleButton from "./components/ToggleButton.vue";
 // State logic
 const viewMode = ref<"grid" | "list">("grid");
 </script>
@@ -11,7 +11,7 @@ const viewMode = ref<"grid" | "list">("grid");
 <template>
   <div class="w-full h-full flex flex-col pt-10 relative">
     <div class="relative w-full flex justify-center items-center mb-4 px-8">
-      <Category />
+      <Categories />
       <ToggleButton v-model="viewMode" />
     </div>
     <div class="flex-1 overflow-hidden">
