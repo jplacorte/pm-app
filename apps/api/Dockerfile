@@ -25,16 +25,15 @@ WORKDIR /app
 COPY --from=prune /app/out/json/ .
 COPY --from=prune /app/out/pnpm-lock.yaml ./
 
-# Install ALL dependencies (including devDeps like 'prisma' CLI)
+# Install ALL dependencies
 RUN pnpm install --frozen-lockfile
 
 # Copy source code
 COPY --from=prune /app/out/full/ .
 
 # Build the project
-# (We pass a dummy DB URL here just in case any build step tries to validate the schema)
-ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
-RUN pnpm turbo run build --filter=api...
+# Pass dummy URL inline so it DOES NOT persist in the image
+RUN DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy" pnpm turbo run build --filter=api...
 
 # --- PREPARE DEPLOYMENT ---
 
@@ -45,12 +44,12 @@ RUN pnpm deploy --filter=api --prod /app/deploy
 RUN cp -r apps/api/dist /app/deploy/dist
 RUN cp -r apps/api/prisma /app/deploy/prisma
 
-# 3. [CRITICAL FIX] Generate Prisma Client for the deployed app
-# We assume the 'prisma' CLI is NOT in the deploy folder (since it's a dev dep).
-# We assume it IS in /app/apps/api (where we installed dev deps).
-# We use 'npx' from that directory to run the binary, but target the schema in /app/deploy.
+# 3. Generate Prisma Client for the deployed app
+# [FIX] We pass DATABASE_URL inline here. This allows 'prisma generate' to pass validation
+# without permanently setting the ENV variable in the final Docker image.
 WORKDIR /app/deploy
-RUN cd /app/apps/api && npx prisma generate --schema=/app/deploy/prisma/schema.prisma
+RUN cd /app/apps/api && \
+    DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy" npx prisma generate --schema=/app/deploy/prisma/schema.prisma
 
 # -----------------------------------------------------------------------------
 # STAGE 4: Runner
