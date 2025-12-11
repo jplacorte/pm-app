@@ -31,9 +31,12 @@ RUN pnpm install --frozen-lockfile
 # Copy source code
 COPY --from=prune /app/out/full/ .
 
+# [FIX] Ensure we do not bake a local .env file into the build artifacts
+RUN rm -f .env apps/api/.env
+
 # Build the project
 # Pass dummy URL inline so it DOES NOT persist in the image
-RUN DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy" pnpm turbo run build --filter=api...
+RUN DATABASE_URL="postgresql://postgres:password@localhost:5432/pm_db?schema=public" pnpm turbo run build --filter=api...
 
 # --- PREPARE DEPLOYMENT ---
 
@@ -45,11 +48,12 @@ RUN cp -r apps/api/dist /app/deploy/dist
 RUN cp -r apps/api/prisma /app/deploy/prisma
 
 # 3. Generate Prisma Client for the deployed app
-# [FIX] We pass DATABASE_URL inline here. This allows 'prisma generate' to pass validation
-# without permanently setting the ENV variable in the final Docker image.
 WORKDIR /app/deploy
 RUN cd /app/apps/api && \
-    DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy" npx prisma generate --schema=/app/deploy/prisma/schema.prisma
+    DATABASE_URL="postgresql://postgres:password@localhost:5432/pm_db?schema=public" npx prisma generate --schema=/app/deploy/prisma/schema.prisma
+
+# 4. [FIX] Remove any potential .env file from the deploy folder just in case
+RUN rm -f .env
 
 # -----------------------------------------------------------------------------
 # STAGE 4: Runner
