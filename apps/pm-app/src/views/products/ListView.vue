@@ -1,48 +1,52 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { Pagination } from "@pm-web/ui";
 import type { Product } from "@pm-web/types";
+import { useApi } from "../../composables/useApi"; // Ensure we fetch real data here too
 
+// 1. Accept Prop
+const props = defineProps<{
+  selectedCategory: string;
+}>();
+
+const { request } = useApi();
+const products = ref<Product[]>([]);
 const itemsPerPage = 10;
 const currentPage = ref(1);
 
-// Dummy Data
-const products = ref<Product[]>(
-  Array.from({ length: 25 }, (_, i) => ({
-    id: i + 1,
-    name: `Tonberry Treat #${i + 1}`,
-    price: 100 + i * 10,
-    category: i % 2 === 0 ? "Pastry" : "Beverage",
-    image: `https://placehold.co/300x200/5682B1/white?text=Treat+${i + 1}`,
-  })),
-);
+// Fetch real data
+const fetchProducts = async () => {
+  const data = await request<Product[]>("/products");
+  if (data) products.value = data;
+};
+
+onMounted(fetchProducts);
+
+// 2. Filter Logic
+const filteredProducts = computed(() => {
+  if (props.selectedCategory === "All") return products.value;
+  return products.value.filter((p) => p.category === props.selectedCategory);
+});
 
 const totalPages = computed(() =>
-  Math.ceil(products.value.length / itemsPerPage),
+  Math.ceil(filteredProducts.value.length / itemsPerPage)
 );
 
 const paginatedProducts = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage;
   const end = start + itemsPerPage;
-  return products.value.slice(start, end);
+  return filteredProducts.value.slice(start, end);
 });
 
-const nextPage = () => {
-  if (currentPage.value < totalPages.value) currentPage.value++;
-};
-const prevPage = () => {
-  if (currentPage.value > 1) currentPage.value--;
-};
-const goToPage = (page: number) => {
-  currentPage.value = page;
-};
+watch(
+  () => props.selectedCategory,
+  () => (currentPage.value = 1)
+);
 
-const formatPrice = (value: number) => {
-  return new Intl.NumberFormat("en-PH", {
-    style: "currency",
-    currency: "PHP",
-  }).format(value);
-};
+const formatPrice = (val: number) =>
+  new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP" }).format(
+    val
+  );
 </script>
 
 <template>
@@ -50,6 +54,13 @@ const formatPrice = (value: number) => {
     <div
       class="flex-1 overflow-y-auto p-8 pb-32 flex flex-col gap-4 no-scrollbar"
     >
+      <div
+        v-if="filteredProducts.length === 0"
+        class="text-center text-gray-500 mt-4"
+      >
+        No products found.
+      </div>
+
       <div
         v-for="product in paginatedProducts"
         :key="product.id"
@@ -62,52 +73,34 @@ const formatPrice = (value: number) => {
             class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
           />
         </div>
-
         <div class="ml-6 flex-1 flex flex-col justify-center">
           <span
             class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1"
-            >{{ product.category }}</span
           >
+            {{ product.category }}
+          </span>
           <h3 class="font-bold text-xl text-slate-800">{{ product.name }}</h3>
           <p class="text-sm text-gray-500 mt-1 line-clamp-1">
             Delicious homemade {{ product.category.toLowerCase() }} made with
             love.
           </p>
         </div>
-
         <div class="ml-4 flex flex-col items-end justify-center min-w-[100px]">
           <span class="text-blue-600 font-bold text-lg">{{
             formatPrice(product.price)
           }}</span>
-          <button
-            class="mt-2 text-xs font-bold text-[#5682B1] hover:text-[#ff9100] hover:underline uppercase tracking-wide opacity-0 group-hover:opacity-100 transition-opacity"
-          >
-            View Details
-          </button>
         </div>
       </div>
     </div>
 
     <Pagination
+      v-if="totalPages > 1"
       class="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20"
       :currentPage="currentPage"
       :totalPages="totalPages"
-      :prevPage="prevPage"
-      :goToPage="goToPage"
-      :nextPage="nextPage"
+      :prevPage="() => currentPage > 1 && currentPage--"
+      :goToPage="(p) => (currentPage = p)"
+      :nextPage="() => currentPage < totalPages && currentPage++"
     />
   </div>
 </template>
-
-<style scoped>
-/* Hide scrollbar for Chrome, Safari and Opera */
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-
-/* Hide scrollbar for Edge and Firefox */
-.no-scrollbar {
-  -ms-overflow-style: none; /* Edge */
-  scrollbar-width: none; /* Firefox */
-}
-</style>

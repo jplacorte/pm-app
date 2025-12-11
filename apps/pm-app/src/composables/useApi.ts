@@ -7,7 +7,6 @@ export function useApi() {
   const loading = ref(false);
   const apiUrl = import.meta.env.VITE_API_URL;
 
-  // Generic request handler
   const request = async <T>(
     endpoint: string,
     options: RequestInit = {}
@@ -15,19 +14,28 @@ export function useApi() {
     loading.value = true;
     error.value = null;
 
-    // Get token from local storage
     const token = localStorage.getItem("accessToken");
 
-    const headers = {
-      "Content-Type": "application/json",
+    // 1. Determine Headers
+    const headers: Record<string, string> = {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...options.headers,
+      // Only merge custom headers if provided
+      ...(options.headers as Record<string, string>),
     };
 
-    try {
-      const res = await fetch(`${apiUrl}${endpoint}`, { ...options, headers });
+    // 2. Handle Content-Type for JSON vs FormData
+    // If body is NOT FormData, default to application/json
+    if (!(options.body instanceof FormData)) {
+      headers["Content-Type"] = "application/json";
+    }
+    // If it IS FormData, DO NOT set Content-Type (browser sets it with boundary)
 
-      // Handle Unauthorized (401) - Clear token and redirect to login
+    try {
+      const res = await fetch(`${apiUrl}${endpoint}`, {
+        ...options,
+        headers,
+      });
+
       if (res.status === 401) {
         localStorage.removeItem("accessToken");
         router.push("/auth/login");

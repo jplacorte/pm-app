@@ -1,8 +1,16 @@
 <script setup lang="ts">
-import { Categories } from "@pm-web/types";
-import { nextTick, onMounted, ref } from "vue";
+import { Categories } from "@pm-web/types"; // Ensure this is imported
+import { nextTick, onMounted, ref, watch } from "vue";
 
-const activeCategory = ref("All");
+// 1. Accept modelValue prop
+const props = defineProps<{
+  modelValue: string;
+}>();
+
+// 2. Define emit for v-model
+const emit = defineEmits<{
+  (e: "update:modelValue", value: string): void;
+}>();
 
 const sliderStyle = ref({
   left: "0px",
@@ -10,19 +18,16 @@ const sliderStyle = ref({
   opacity: 0,
 });
 
-// Need to capture the HTML elements to measure them
-// We store them in a dictionary: { 'All': element, 'Beverage': element, ... }
 const itemRefs = ref<Record<string, HTMLElement | null>>({});
 
-// Helper to assign refs dynamically in the template
 function setItemRef(el: any, key: string) {
   if (el) itemRefs.value[key] = el;
 }
 
-// Find the active element and move the slider there
 async function moveSlider() {
-  await nextTick(); // Wait for DOM updates
-  const activeEl = itemRefs.value[activeCategory.value];
+  await nextTick();
+  // 3. Use prop instead of local state
+  const activeEl = itemRefs.value[props.modelValue];
 
   if (activeEl) {
     sliderStyle.value = {
@@ -34,11 +39,13 @@ async function moveSlider() {
 }
 
 const selectCategory = (category: string) => {
-  activeCategory.value = category;
-  moveSlider();
+  // 4. Emit update to parent
+  emit("update:modelValue", category);
 };
 
-// Update position on mount and when window resizes (to keep it aligned)
+// 5. Watch prop to update slider when parent changes it
+watch(() => props.modelValue, moveSlider);
+
 onMounted(() => {
   moveSlider();
   window.addEventListener("resize", moveSlider);
@@ -62,7 +69,12 @@ onMounted(() => {
       href="#"
       :ref="(el) => setItemRef(el, 'All')"
       @click.prevent="selectCategory('All')"
-      class="text-[#FFE8DB] font-bold font-['Pacifico',cursive] hover:text-[#fad9c8] transition-colors z-10"
+      class="font-['Pacifico',cursive] transition-colors z-10"
+      :class="
+        modelValue === 'All'
+          ? 'text-[#FFE8DB] font-bold'
+          : 'text-[#FFE8DB]/70 hover:text-[#FFE8DB]'
+      "
     >
       All
     </a>
@@ -73,7 +85,12 @@ onMounted(() => {
       :ref="(el) => setItemRef(el, category)"
       href="#"
       @click.prevent="selectCategory(category)"
-      class="font-['Pacifico',cursive] text-[#FFE8DB] hover:text-[#fad9c8] transition-colors z-10"
+      class="font-['Pacifico',cursive] transition-colors z-10"
+      :class="
+        modelValue === category
+          ? 'text-[#FFE8DB] font-bold'
+          : 'text-[#FFE8DB]/70 hover:text-[#FFE8DB]'
+      "
     >
       {{ category }}
     </a>

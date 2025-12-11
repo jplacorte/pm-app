@@ -1,17 +1,20 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { Card, Pagination } from "@pm-web/ui";
 import type { Product } from "@pm-web/types";
 import Ellipsis from "./components/Ellipsis.vue";
 import { useApi } from "../../composables/useApi";
 
-const { request } = useApi();
+// 1. Accept selectedCategory prop
+const props = defineProps<{
+  selectedCategory: string;
+}>();
 
+const { request } = useApi();
 const products = ref<Product[]>([]);
 const itemsPerPage = 10;
 const currentPage = ref(1);
 
-// 1. Fetch Products on Mount
 const fetchProducts = async () => {
   const data = await request<Product[]>("/products");
   if (data) {
@@ -19,36 +22,35 @@ const fetchProducts = async () => {
   }
 };
 
-onMounted(() => {
-  fetchProducts();
+onMounted(fetchProducts);
+
+// 2. Computed property for filtering
+const filteredProducts = computed(() => {
+  if (!props.selectedCategory || props.selectedCategory === "All") {
+    return products.value;
+  }
+  return products.value.filter((p) => p.category === props.selectedCategory);
 });
 
-// 2. Handle Delete
-const handleDelete = async (product: Product) => {
-  if (confirm(`Are you sure you want to delete ${product.name}?`)) {
-    const success = await request(`/products/${product.id}`, {
-      method: "DELETE",
-    });
-
-    if (success) {
-      // Remove from local state immediately
-      products.value = products.value.filter((p) => p.id !== product.id);
-    }
-  }
-  activeMenuId.value = null;
-};
-
-// ... Keep existing Pagination logic ...
+// 3. Use filteredProducts for pagination
 const totalPages = computed(() =>
-  Math.ceil(products.value.length / itemsPerPage)
+  Math.ceil(filteredProducts.value.length / itemsPerPage)
 );
+
 const paginatedProducts = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage;
   const end = start + itemsPerPage;
-  return products.value.slice(start, end);
+  return filteredProducts.value.slice(start, end);
 });
 
-// ... Keep existing menu toggle logic ...
+// Reset page when category changes
+watch(
+  () => props.selectedCategory,
+  () => {
+    currentPage.value = 1;
+  }
+);
+
 const activeMenuId = ref<number | null>(null);
 const toggleMenu = (id: number) => {
   activeMenuId.value = activeMenuId.value === id ? null : id;
@@ -64,8 +66,15 @@ const formatPrice = (value: number) => {
 
 <template>
   <div class="p-8 h-full relative pb-24 overflow-y-auto">
-    <div v-if="products.length === 0" class="text-center text-gray-500 mt-10">
-      Loading products...
+    <div
+      v-if="filteredProducts.length === 0"
+      class="text-center text-gray-500 mt-10"
+    >
+      {{
+        products.length === 0
+          ? "Loading..."
+          : "No products found in this category."
+      }}
     </div>
 
     <div
@@ -81,9 +90,9 @@ const formatPrice = (value: number) => {
           :productId="product.id"
           :activeMenuId="activeMenuId"
           :toggleMenu="toggleMenu"
-          :handleView="() => console.log('View', product.id)"
-          :handleUpdate="() => console.log('Update', product.id)"
-          :handleDelete="() => handleDelete(product)"
+          :handleView="() => {}"
+          :handleUpdate="() => {}"
+          :handleDelete="() => {}"
         />
         <div class="overflow-hidden h-40 w-full">
           <img
@@ -109,6 +118,7 @@ const formatPrice = (value: number) => {
     </div>
 
     <Pagination
+      v-if="totalPages > 1"
       class="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-10"
       :currentPage="currentPage"
       :totalPages="totalPages"
