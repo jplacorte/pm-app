@@ -32,7 +32,7 @@ WORKDIR /tonberry-api
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
 # Copy ONLY node_modules needed + built app
-COPY --from=builder tonberry-api/apps/node_modules ./node_modules
+COPY --from=builder tonberry-api/node_modules ./node_modules
 COPY --from=builder tonberry-api/apps/api ./apps/api
 
 CMD ["pnpm", "--filter", "api", "start"]
