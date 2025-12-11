@@ -13,19 +13,21 @@ RUN turbo prune --scope=api --docker
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
+RUNHP corepack enable && corepack prepare pnpm@9.0.0 --activate
 
-# [FIX 1] Force pnpm to hoist dependencies to the root node_modules
-# This prevents "Cannot find module" errors caused by pnpm's default symlinked structure
+# Force pnpm to hoist dependencies to the root node_modules
 RUN echo "node-linker=hoisted" > .npmrc
 
 COPY --from=prune /app/out/json/ .
 COPY --from=prune /app/out/pnpm-lock.yaml ./
 
-# Install dependencies (they will now be flat in /app/node_modules)
+# Install dependencies
 RUN pnpm install --frozen-lockfile
 
 COPY --from=prune /app/out/full/ .
+
+# [FIX] Set a dummy DATABASE_URL so Prisma can validate the config/schema during generation
+ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
 
 # Generate Prisma Client
 RUN cd apps/api && npx prisma generate
