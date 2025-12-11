@@ -87,6 +87,7 @@ const handleSubmit = async () => {
           placeholder="0.00"
           type="number"
           step="0.01"
+          prefix="₱"
         />
 
         <Dropdown

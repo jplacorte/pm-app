@@ -1,32 +1,51 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { useRouter } from "vue-router";
-import { TextButton, TextInput } from "@pm-web/ui";
+import { IconButton, TextButton, TextInput } from "@pm-web/ui";
 import { useApi } from "../../composables/useApi";
 import TonberryIcon from "../../Images/tonberry_christmas.png";
+import { faExclamationCircle } from "@fortawesome/free-solid-svg-icons";
+import LoadingState from "../../components/LoadingState.vue";
 
 const router = useRouter();
-const { request, loading, error } = useApi();
+const { request, error } = useApi();
 
 const email = ref("");
 const password = ref("");
+const isLoggingIn = ref(false);
 
 const handleLogin = async () => {
-  if (!email.value || !password.value) return;
+  error.value = null;
 
-  const response = await request<{ accessToken: string; user: any }>(
-    "/auth/login",
-    {
-      method: "POST",
-      body: JSON.stringify({ email: email.value, password: password.value }),
+  if (!email.value || !password.value) {
+    error.value = "Please enter both email and password.";
+    return;
+  }
+
+  isLoggingIn.value = true;
+
+  try {
+    // Artificial 5-second delay
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+
+    const response = await request<{ accessToken: string; user: any }>(
+      "/auth/login",
+      {
+        method: "POST",
+        body: JSON.stringify({ email: email.value, password: password.value }),
+      }
+    );
+
+    if (response) {
+      localStorage.setItem("accessToken", response.accessToken);
+      localStorage.setItem("user", JSON.stringify(response.user));
+      router.push("/products");
+    } else {
+      if (!error.value) error.value = "Invalid credentials";
+      isLoggingIn.value = false;
     }
-  );
-
-  if (response) {
-    // Store the token securely
-    localStorage.setItem("accessToken", response.accessToken);
-    localStorage.setItem("user", JSON.stringify(response.user));
-    router.push("/products");
+  } catch (e) {
+    isLoggingIn.value = false;
   }
 };
 </script>
@@ -41,31 +60,44 @@ const handleLogin = async () => {
       Tonberry Cafe
     </h1>
 
-    <div
-      class="flex flex-col w-96 space-y-6 bg-[#FFE8DB] p-8 rounded-lg items-center text-center"
+    <LoadingState v-if="isLoggingIn" message="Logging in..." isCard />
+
+    <form
+      v-else
+      @submit.prevent="handleLogin"
+      class="flex flex-col w-96 space-y-6 bg-[#FFE8DB] p-8 rounded-lg items-center text-center shadow-xl border-4 border-[#739EC9] min-h-[400px] justify-center"
     >
-      <p v-if="error" class="text-red-500 font-bold">{{ error }}</p>
+      <div
+        v-if="error"
+        class="w-full bg-red-100 border-l-4 border-red-500 text-red-700 p-3 rounded text-sm flex items-center gap-2 text-left"
+        role="alert"
+      >
+        <IconButton :icon="faExclamationCircle" />
+        <span class="font-medium">{{ error }}</span>
+      </div>
 
-      <TextInput
-        :modelValue="email"
-        @update:modelValue="(newValue) => (email = newValue)"
-        placeholder="Enter your email address"
-      />
+      <div class="w-full space-y-6">
+        <TextInput
+          :modelValue="email"
+          @update:modelValue="(newValue) => (email = newValue)"
+          placeholder="Enter your email address"
+        />
 
-      <TextInput
-        :modelValue="password"
-        @update:modelValue="(newValue) => (password = newValue)"
-        type="password"
-        placeholder="Enter your password"
-      />
+        <TextInput
+          :modelValue="password"
+          @update:modelValue="(newValue) => (password = newValue)"
+          type="password"
+          placeholder="Enter your password"
+        />
 
-      <TextButton
-        :label="loading ? 'Logging in...' : 'Login'"
-        :disabled="loading"
-        @click="handleLogin"
-      />
+        <TextButton
+          :label="isLoggingIn ? 'Logging in...' : 'Login'"
+          :disabled="isLoggingIn"
+          type="submit"
+        />
+      </div>
 
-      <div class="flex flex-row space-x-2">
+      <div class="flex flex-row space-x-2 justify-center">
         <span class="text-gray-500">Don't have an account?</span>
         <RouterLink
           to="/auth/register"
@@ -74,6 +106,6 @@ const handleLogin = async () => {
           Register
         </RouterLink>
       </div>
-    </div>
+    </form>
   </div>
 </template>

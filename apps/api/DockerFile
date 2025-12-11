@@ -1,0 +1,36 @@
+# apps/api/Dockerfile (local development)
+FROM node:18-alpine
+
+# Install system deps and enable pnpm via corepack
+RUN apk add --no-cache bash git openssh \
+ && corepack enable \
+ && corepack prepare pnpm@latest --activate
+
+WORKDIR /workspace
+
+# Copy only manifests first for fast installs and reproducible deps
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY apps/api/package.json apps/api/package.json
+COPY packages ./packages
+
+# Copy prisma schema early so postinstall hooks that need it won't fail
+COPY apps/api/prisma ./apps/api/prisma
+
+# Install all deps into the image (dev + prod). node_modules will live in the image
+RUN pnpm install --frozen-lockfile --reporter=append-only
+
+# Copy the rest of the repo for any build steps that need source at image build time
+COPY . .
+
+# Optional: run a build step once so dist exists for quick start
+RUN pnpm -w turbo run build --filter=api... --no-cache || true
+
+# Expose the port your app uses
+EXPOSE 3000
+
+# Use a non-root user for safety
+RUN addgroup -S app && adduser -S -G app app
+USER app
+
+# Default command for dev: start Nest in watch mode (adjust if you use a different dev script)
+CMD ["pnpm", "--filter=api", "run", "dev"]

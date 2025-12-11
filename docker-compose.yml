@@ -1,47 +1,15 @@
 version: "3.8"
-
 services:
-  # The Backend API Service
   api:
-    # Build context is the root (.) so Docker can see "packages/"
     build:
       context: .
       dockerfile: apps/api/Dockerfile
-    container_name: pm-app-api
+      target: final
+    image: pm-app-api-dev
     ports:
       - "3000:3000"
     environment:
-      - NODE_ENV=production
-      # This connects to the 'db' service defined below
-      - DATABASE_URL=postgresql://postgres:password@db:5432/pm_db?schema=public
-    depends_on:
-      - db
-    networks:
-      - pm-network
-    restart: unless-stopped
-
-  # The Database Service
-  db:
-    image: postgres:15-alpine
-    container_name: pm-app-db
-    ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: pm_db
+      DATABASE_URL: "postgresql://postgres:password@host:5432/pm_db?schema=public"
     volumes:
-      # Persist data even if the container stops
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - pm-network
-    restart: always
-
-# Define a shared network so containers can talk to each other
-networks:
-  pm-network:
-    driver: bridge
-
-# Define the volume for database persistence
-volumes:
-  postgres_data:
+      - ./:/workspace:cached
+      - /workspace/node_modules

@@ -16,14 +16,14 @@ export function useApi() {
 
     const token = localStorage.getItem("accessToken");
 
-    // 1. Determine Headers
+    // Determine Headers
     const headers: Record<string, string> = {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       // Only merge custom headers if provided
       ...(options.headers as Record<string, string>),
     };
 
-    // 2. Handle Content-Type for JSON vs FormData
+    // Handle Content-Type for JSON vs FormData
     // If body is NOT FormData, default to application/json
     if (!(options.body instanceof FormData)) {
       headers["Content-Type"] = "application/json";
