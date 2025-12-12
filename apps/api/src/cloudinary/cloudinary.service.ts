@@ -18,7 +18,6 @@ export class CloudinaryService {
         ) => {
           if (error) return reject(error);
 
-          // FIX: Explicitly check if result exists
           if (!result) {
             return reject(
               new BadRequestException(
