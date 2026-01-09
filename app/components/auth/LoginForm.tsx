@@ -12,13 +12,15 @@ export default function LoginForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4 select-none w-80">
       <Input
+        type="email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         placeholder="Enter your email address"
       />
 
       <Input
-        value={email}
+        type="password"
+        value={password}
         onChange={(e) => setPassword(e.target.value)}
         placeholder="Enter your password"
       />
