@@ -1,4 +1,6 @@
 import StoreProvider from "./StoreProvider";
+import Footer from "./components/common/Footer";
+import Header from "./components/common/Header";
 import "./globals.css";
 
 export default function RootLayout({
@@ -10,7 +12,11 @@ export default function RootLayout({
     <html lang="en">
       <title>Product Management</title>
       <body className="w-screen h-screen bg-quaternary">
-        <StoreProvider>{children}</StoreProvider>
+        <StoreProvider>
+          <Header />
+          {children}
+          <Footer />
+        </StoreProvider>
       </body>
     </html>
   );
