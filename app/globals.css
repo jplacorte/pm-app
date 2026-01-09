@@ -5,7 +5,11 @@
   --foreground: #171717;
 }
 
-@theme inline {
+@theme {
+  --color-primary: #27374d;
+  --color-secondary: #526d82;
+  --color-tertiary: #9db2bf;
+  --color-quaternary: #dde6ed;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
