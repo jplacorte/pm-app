@@ -8,6 +8,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <title>Product Management</title>
       <body className="w-screen h-screen bg-quaternary">
         <StoreProvider>{children}</StoreProvider>
       </body>

@@ -1,14 +1,5 @@
-import type { ButtonType, Size, Theme, Version } from "@/types/Button";
+import type { ButtonProps } from "@/types/ui/Button";
 import classNames from "classnames";
-
-interface Props {
-  label: string;
-  size?: Size;
-  type?: ButtonType;
-  theme?: Theme;
-  version?: Version;
-  onClick?: () => void;
-}
 
 export default function TextButton({
   label,
@@ -17,7 +8,7 @@ export default function TextButton({
   version = "primary",
   type = "button",
   onClick,
-}: Props) {
+}: ButtonProps) {
   return (
     <button
       type={type}

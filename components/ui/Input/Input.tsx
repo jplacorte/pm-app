@@ -1,20 +1,13 @@
+import { InputProps } from "@/types/ui/Input";
 import classNames from "classnames";
-import { ChangeEventHandler, HTMLInputTypeAttribute } from "react";
 
-interface Props {
-  type?: HTMLInputTypeAttribute;
-  value?: string | readonly string[] | number | undefined;
-  className?: string;
-  placeholder?: string;
-  onChange: ChangeEventHandler<HTMLInputElement>;
-}
 export default function Input({
   type,
   value,
   className,
   placeholder,
   onChange,
-}: Props) {
+}: InputProps) {
   return (
     <input
       type={type}
