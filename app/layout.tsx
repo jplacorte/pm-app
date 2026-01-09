@@ -1,4 +1,5 @@
 import StoreProvider from "./StoreProvider";
+import "./globals.css";
 
 export default function RootLayout({
   children,
@@ -7,7 +8,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="w-screen h-screen">
+      <body className="w-screen h-screen bg-quaternary">
         <StoreProvider>{children}</StoreProvider>
       </body>
     </html>
